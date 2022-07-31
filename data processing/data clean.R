@@ -34,3 +34,6 @@ scorecard_data <- scorecard_data %>% rename(unitid = UNITID)
 #join scorecard data to trends_data
 trends_data <- inner_join(trends_data, scorecard_data, by = "unitid")
 
+#filter for predominantly bachelor's degree awarding institutions
+trends_data <- trends_data %>% filter(PREDDEG == 3)
+
