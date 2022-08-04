@@ -71,3 +71,5 @@ trends_data <- trends_data %>%
 trends_data <- trends_data %>% mutate(high_income = if_else(`md_earn_wne_p10-REPORTED-EARNINGS` > year_md_inc, 'Y', 'N')) %>% 
   rename(index = `mean(index)`)
 
+write_csv(trends_data, "data/trends_data.csv")
+

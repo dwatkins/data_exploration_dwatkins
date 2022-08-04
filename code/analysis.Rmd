@@ -12,8 +12,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(purrr)
+library(lubridate)
 library(fixest)
 library(vtable)
+```
+
+```{r}
+trends_data <- read_csv("../data/trends_data.csv")
 ```
 
 
@@ -22,8 +28,5 @@ graph_data <- trends_data %>% group_by(monthorweek, high_income) %>% summarize(m
 
 ggplot(graph_data, aes(x = monthorweek, y = `mean(index)`, color = high_income)) + geom_point() + geom_line() + geom_vline(xintercept = as.Date("2015-09-01")) + geom_smooth(method = 'lm')
 ```
-```{r}
-model1 <- feols(index ~ high_income + scorecard_exist, data = trends_data)
-etable(model1)
-```
+
 
