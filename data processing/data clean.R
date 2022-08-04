@@ -10,6 +10,7 @@ trends_data <- csv_list_trendfiles %>%
 #get the date data
 trends_data$monthorweek <- trends_data$monthorweek %>% str_sub(start = 1, end = 10) %>% ymd() %>% floor_date('month') 
 
+#indexing stuff?
 trends_data <- trends_data %>% group_by(schname, keyword) %>% mutate(index = (index - mean(index))/sd(index))
 
 trends_data <- trends_data %>% group_by(schname, monthorweek) %>% summarize(index)
@@ -21,7 +22,7 @@ trends_data <- trends_data %>% filter(!is.na(index))
 trends_data <- trends_data %>% group_by(schname, monthorweek) %>% summarise(mean(index))
 
 #create true/false (1/0) variable for if the scorecard exists
-trends_data <- trends_data %>% mutate(scorecard_exist = if_else(monthorweek >= "2015-09-01", 1, 0))
+trends_data <- trends_data %>% mutate(scorecard_exist = if_else(monthorweek >= "2015-09-01", 'Y', 'N'))
 
 #read in scorecard data
 scorecard_data <- read_csv("data/Lab3_Rawdata/Most+Recent+Cohorts+(Scorecard+Elements).csv")
@@ -48,7 +49,7 @@ trends_data <- trends_data %>% filter(PREDDEG == 3)
 trends_data <- trends_data %>% relocate(`md_earn_wne_p10-REPORTED-EARNINGS`, .after = `mean(index)`)
 
 #get rid of unwanted variables
-trends_data <- trends_data %>% select(unitid:`md_earn_wne_p10-REPORTED-EARNINGS`)
+trends_data <- trends_data %>% select(unitid:scorecard_exist)
 
 #remove null and privacysuppresses values from median earnings
 trends_data <- trends_data %>% subset(`md_earn_wne_p10-REPORTED-EARNINGS` != "PrivacySuppressed" & 
@@ -60,11 +61,13 @@ trends_data$`md_earn_wne_p10-REPORTED-EARNINGS` <- as.numeric(trends_data$`md_ea
 
 #https://fred.stlouisfed.org/series/MEHOINUSA672N
 #add in median income per year based on the link above 
-trends_data <- trends_data %>% mutate(year_md_inc = if_else(monthorweek >= "2013-01-01" & monthorweek <= "2013-12-31", 59460,
-                                                            if_else(monthorweek >= "2014-01-01" & monthorweek <= "2014-12-31", 58725,
-                                                                    if_else(monthorweek >= "2015-01-01" & monthorweek <= "2015-12-31", 61748,
-                                                                            if_else(monthorweek >= "2016-01-01" & monthorweek <= "2016-12-31", 63683,0)))))
+trends_data <- trends_data %>% 
+  mutate(year_md_inc = if_else(monthorweek >= "2013-01-01" & monthorweek <= "2013-12-31", 59460,
+                               if_else(monthorweek >= "2014-01-01" & monthorweek <= "2014-12-31", 58725,
+                                       if_else(monthorweek >= "2015-01-01" & monthorweek <= "2015-12-31", 61748,
+                                               if_else(monthorweek >= "2016-01-01" & monthorweek <= "2016-12-31", 63683,0)))))
 
 #compare median income to median income year
-trends_data <- trends_data %>% mutate(high_income = if_else(`md_earn_wne_p10-REPORTED-EARNINGS` > year_md_inc, 1, 0))
+trends_data <- trends_data %>% mutate(high_income = if_else(`md_earn_wne_p10-REPORTED-EARNINGS` > year_md_inc, 'Y', 'N')) %>% 
+  rename(index = `mean(index)`)
 
