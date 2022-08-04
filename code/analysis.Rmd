@@ -15,24 +15,16 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-high_inc <- trends_data %>% filter(high_income == 'Y')
-high_inc$monthorweek <- high_inc$monthorweek %>% str_sub(start = 1, end = 4) 
-high_inc <- high_inc %>% group_by(unitid, opeid, schname,
-   monthorweek, scorecard_exist, `md_earn_wne_p10-REPORTED-EARNINGS`, year_md_inc, high_income) %>% summarize(mean(index))
-ggplot(high_income, aes(x = `md_earn_wne_p10-REPORTED-EARNINGS`, y = `mean(index)`)) + geom_point() + geom_smooth(method = 'lm')
-                                               
+graph_data <- trends_data %>% group_by(monthorweek, high_income) %>% summarize(mean(index))
+ggplot(graph_data, aes(x = monthorweek, y = `mean(index)`, color = high_income)) + geom_point() + geom_line() + geom_smooth(method = 'lm') + geom_vline(xintercept = as.Date('2015-09-01'))
+
+                                   
+```
+
+
 ```
 
 ```{r}
-low_inc <- trends_data %>% filter(high_income == 'N')
-low_inc$monthorweek <- low_inc$monthorweek %>% str_sub(start = 1, end = 4) 
-low_inc <- low_inc %>% group_by(unitid, opeid, schname,
-    monthorweek, scorecard_exist, `md_earn_wne_p10-REPORTED-EARNINGS`, year_md_inc, high_income) %>% summarize(mean(index))
-ggplot(low_income, aes(x = `md_earn_wne_p10-REPORTED-EARNINGS`, y = `mean(index)`)) + geom_point() + geom_smooth(method = 'lm')
-```
 
-```{r}
-index_model <- feols(index ~ high_income + scorecard_exist, data = trends_data)
-etable(index_model)
 ```
 
