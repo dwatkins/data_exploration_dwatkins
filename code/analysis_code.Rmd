@@ -23,10 +23,10 @@ library(fixest)
 library(vtable)
 ```
 
+Summary statistics!
 ```{r}
-ggplot(data = clean_data, mapping = aes(x = median_earnings)) + geom_histogram()
+sumtable(clean_data)
 ```
-
 
 
 ```{r}
