@@ -68,7 +68,7 @@ trends_data <- trends_data %>%
                                                if_else(monthorweek >= "2016-01-01" & monthorweek <= "2016-12-31", 63683,0)))))
 
 #compare median income to median income year
-trends_data <- trends_data %>% mutate(high_income = if_else(`md_earn_wne_p10-REPORTED-EARNINGS` > year_md_inc, 'Y', 'N')) %>% 
+trends_data <- trends_data %>% mutate(high_income = if_else(`md_earn_wne_p10-REPORTED-EARNINGS` > (0.75 * year_md_inc), 'Y', 'N')) %>% 
   rename(index = `mean(index)`)
 
 save(trends_data, file = "data/clean_trends.RData")
