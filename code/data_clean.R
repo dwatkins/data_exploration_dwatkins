@@ -47,17 +47,18 @@ trends_data <- inner_join(trends_data, scorecard_data, by = "unitid")
 trends_data <- trends_data %>% filter(PREDDEG == 3)
 
 #move scorecard exist and median earnings from end to behind index
-trends_data <- trends_data %>% relocate(`md_earn_wne_p10-REPORTED-EARNINGS`, .after = index)
+trends_data <- trends_data %>% relocate(`md_earn_wne_p10-REPORTED-EARNINGS`, .after = index) %>% 
+  rename(median_earnings = `md_earn_wne_p10-REPORTED-EARNINGS`)
 
 #get rid of unwanted variables
 trends_data <- trends_data %>% select(unitid:scorecard_exist)
 
 #remove null and privacysuppresses values from median earnings
-trends_data <- trends_data %>% subset(`md_earn_wne_p10-REPORTED-EARNINGS` != "PrivacySuppressed" & 
-                                        `md_earn_wne_p10-REPORTED-EARNINGS` != "NULL") %>% select(-n)
+trends_data <- trends_data %>% subset(median_earnings != "PrivacySuppressed" & 
+                                        median_earnings != "NULL") %>% select(-n)
 
 #convert median earnings to numeric
-trends_data$`md_earn_wne_p10-REPORTED-EARNINGS` <- as.numeric(trends_data$`md_earn_wne_p10-REPORTED-EARNINGS`)
+trends_data$median_earnings <- as.numeric(trends_data$median_earnings)
 
 
 #https://fred.stlouisfed.org/series/MEHOINUSA672N
@@ -69,7 +70,7 @@ trends_data <- trends_data %>%
                                                if_else(monthorweek >= "2016-01-01" & monthorweek <= "2016-12-31", 63683,0)))))
 
 #compare median income to median income year
-trends_data <- trends_data %>% mutate(high_income = if_else(`md_earn_wne_p10-REPORTED-EARNINGS` > (0.75 * year_md_inc), 'TRUE', 'FALSE'))
+trends_data <- trends_data %>% mutate(high_income = if_else(median_earnings > (0.75 * year_md_inc), 'TRUE', 'FALSE'))
 
 clean_data <- trends_data
 
