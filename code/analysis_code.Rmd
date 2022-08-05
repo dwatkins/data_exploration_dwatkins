@@ -35,8 +35,14 @@ Adding in some more notes here, we do see parallel trends between both low incom
 **Still need to plot residuals for both models** 
 ```{r}
 md1 <- feols(index ~ scorecard_exist + high_income, data =clean_data)
+resid_md1 <- resid(md1)
+plot(fitted(md1), resid_md1)
+```
+```{r}
+wald(md1, c('high_income', 'scorecard_exist'))
 etable(md1)
 ```
+
 Want to get interaction of high_income and scorecard_exist. Also going to add control for seasonality and separate month from the monthorweek variable. 
 ```{r}
 clean_data <- clean_data %>% mutate(month = month(monthorweek))
@@ -44,7 +50,12 @@ clean_data <- clean_data %>% mutate(month = month(monthorweek))
 
 ```{r}
 md2 <- feols(index ~ scorecard_exist + high_income + scorecard_exist*high_income + month, data = clean_data)
-etable(md2)
-wald(md2, 'high_income')
+resid_md2 <- resid(md2)
+plot(fitted(md2), resid_md2)
 ```
+```{r}
+wald(md2, c('high_income', 'scorecard_exist'))
+etable(md2)
+```
+
 
