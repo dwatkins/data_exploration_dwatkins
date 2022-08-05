@@ -1,0 +1,43 @@
+---
+title: "Data Exploration Analysis"
+author: "Danielle Watkins"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+```{r}
+load("data/clean_trends.RData")
+```
+
+
+```{r}
+library(tidyverse)
+library(purrr)
+library(lubridate)
+library(fixest)
+library(vtable)
+```
+
+
+
+```{r}
+index_time_graph <- trends_data %>% group_by(monthorweek, high_income) %>% summarize(mean(index))
+
+ggplot(index_time_graph, aes(x = monthorweek, y = `mean(index)`, color = high_income)) + geom_point() + geom_line() + geom_vline(xintercept = as.Date("2015-09-01")) + geom_smooth(method = 'lm')
+```
+```{r}
+index_income_graph <- trends_data %>% group_by(`md_earn_wne_p10-REPORTED-EARNINGS`, high_income) %>% summarize(mean(index))
+
+ggplot(index_income_graph, aes(x = `md_earn_wne_p10-REPORTED-EARNINGS`, y = `mean(index)`, color = high_income)) + geom_point() + geom_line() + geom_vline(xintercept = as.Date("2015-09-01")) + geom_smooth(method = 'lm')
+```
+
+```{r}
+index_time_model <- feols(index ~ scorecard_exist + high_income + scorecard_exist*high_income + monthorweek,data = trends_data)
+etable(index_time_model)
+```
+
