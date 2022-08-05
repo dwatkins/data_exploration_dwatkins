@@ -23,6 +23,10 @@ library(fixest)
 library(vtable)
 ```
 
+```{r}
+ggplot(data = clean_data, mapping = aes(x = median_earnings)) + geom_histogram()
+```
+
 
 
 ```{r}
