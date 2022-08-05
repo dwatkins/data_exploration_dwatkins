@@ -26,18 +26,25 @@ library(vtable)
 
 
 ```{r}
-index_time_graph <- trends_data %>% group_by(monthorweek, high_income) %>% summarize(mean(index))
+index_time_graph <- clean_data %>% group_by(monthorweek, high_income) %>% summarize(mean(index))
 
 ggplot(index_time_graph, aes(x = monthorweek, y = `mean(index)`, color = high_income)) + geom_point() + geom_line() + geom_vline(xintercept = as.Date("2015-09-01")) + geom_smooth(method = 'lm')
 ```
-```{r}
-index_income_graph <- trends_data %>% group_by(`md_earn_wne_p10-REPORTED-EARNINGS`, high_income) %>% summarize(mean(index))
+Adding in some more notes here, we do see parallel trends between both low income and high income universities in index. 
 
-ggplot(index_income_graph, aes(x = `md_earn_wne_p10-REPORTED-EARNINGS`, y = `mean(index)`, color = high_income)) + geom_point() + geom_line() + geom_vline(xintercept = as.Date("2015-09-01")) + geom_smooth(method = 'lm')
+**Still need to plot residuals for both models** 
+```{r}
+md1 <- feols(index ~ scorecard_exist + high_income, data =clean_data)
+etable(md1)
+```
+Want to get interaction of high_income and scorecard_exist. Also going to add control for seasonality and separate month from the monthorweek variable. 
+```{r}
+clean_data <- clean_data %>% mutate(month = month(monthorweek))
 ```
 
 ```{r}
-index_time_model <- feols(index ~ scorecard_exist + high_income + scorecard_exist*high_income + monthorweek,data = trends_data)
-etable(index_time_model)
+md2 <- feols(index ~ scorecard_exist + high_income + scorecard_exist*high_income + month, data = clean_data)
+etable(md2)
+wald(md2, 'high_income')
 ```
 
