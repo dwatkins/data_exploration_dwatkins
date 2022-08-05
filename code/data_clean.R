@@ -19,10 +19,11 @@ trends_data <- trends_data %>% group_by(schname, monthorweek) %>% summarize(inde
 trends_data <- trends_data %>% filter(!is.na(index))
 
 #group by month or week
-trends_data <- trends_data %>% group_by(schname, monthorweek) %>% summarise(mean(index))
+trends_data <- trends_data %>% group_by(schname, monthorweek) %>% summarize(mean(index))
+trends_data <- trends_data %>% rename(index = `mean(index)`)
 
 #create true/false (1/0) variable for if the scorecard exists
-trends_data <- trends_data %>% mutate(scorecard_exist = if_else(monthorweek >= "2015-09-01", 'Y', 'N'))
+trends_data <- trends_data %>% mutate(scorecard_exist = if_else(monthorweek >= "2015-09-01", 'TRUE', 'FALSE'))
 
 #read in scorecard data
 scorecard_data <- read_csv("data/Lab3_Rawdata/Most+Recent+Cohorts+(Scorecard+Elements).csv")
@@ -46,7 +47,7 @@ trends_data <- inner_join(trends_data, scorecard_data, by = "unitid")
 trends_data <- trends_data %>% filter(PREDDEG == 3)
 
 #move scorecard exist and median earnings from end to behind index
-trends_data <- trends_data %>% relocate(`md_earn_wne_p10-REPORTED-EARNINGS`, .after = `mean(index)`)
+trends_data <- trends_data %>% relocate(`md_earn_wne_p10-REPORTED-EARNINGS`, .after = index)
 
 #get rid of unwanted variables
 trends_data <- trends_data %>% select(unitid:scorecard_exist)
@@ -68,8 +69,9 @@ trends_data <- trends_data %>%
                                                if_else(monthorweek >= "2016-01-01" & monthorweek <= "2016-12-31", 63683,0)))))
 
 #compare median income to median income year
-trends_data <- trends_data %>% mutate(high_income = if_else(`md_earn_wne_p10-REPORTED-EARNINGS` > (0.75 * year_md_inc), 'Y', 'N')) %>% 
-  rename(index = `mean(index)`)
+trends_data <- trends_data %>% mutate(high_income = if_else(`md_earn_wne_p10-REPORTED-EARNINGS` > (0.75 * year_md_inc), 'TRUE', 'FALSE'))
 
-save(trends_data, file = "data/clean_trends.RData")
+clean_data <- trends_data
+
+save(clean_data, file = "data/clean_trends.RData")
 
