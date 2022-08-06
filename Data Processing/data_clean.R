@@ -74,5 +74,5 @@ trends_data <- trends_data %>% mutate(high_income = if_else(median_earnings > (0
 
 clean_data <- trends_data
 
-save(clean_data, file = "Data/clean_trends.RData")
+save(clean_data, file = "data/clean_trends.RData")
 
