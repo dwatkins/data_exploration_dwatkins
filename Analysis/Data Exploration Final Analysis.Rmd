@@ -1,0 +1,119 @@
+---
+title: "Data Exploration Final Analysis"
+author: "Danielle Watkins"
+date: "8/6/2022"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+
+Load in packages.
+```{r}
+library(tidyverse)
+library(purrr)
+library(lubridate)
+library(fixest)
+library(vtable)
+```
+
+## The Research Question:
+Among colleges that predominantly grant bachelor’s degrees, did the release of the Scorecard shift student interest to high-earnings colleges relative to low-earnings ones (as proxied by Google searches for keywords associated with those colleges)?
+
+## The Data: \
+### Data Overview\
+```{r}
+load("data/clean_trends.RData")
+sumtable(clean_data)
+```
+
+The Google Trends data consisted of 16 .csv files. To merge these into one data frame for analysis, I used list.files() and map_df() to stack all of these files on top of one another to create a data frame consisting of all trends data. I then cleaned up the data formatting and standardized the measurement of index by subtracting the mean of each index from the index itself, followed by dividing by the standard deviation of the index. I then grouped by schname and month to take the average standardized index so each school only has 12 observations per year.  
+
+Based on the data I created a variable that indicates whether or not the College Scorecard existed and loaded in the rest of the data (Scorecard Data and School ID data). Using inner joins I tied all of the files together. At this point I removed duplicate school entries and filtered out any schools that do not predominately award bachelor's degrees. Lastly, I selected only the variables I will be using and reordered some variables for convenience.
+
+
+### Assumptions: 
+In order to categorize and define a "high earning" institution I created a dummy variable (high_income). To account for the changing value of the dollar, I chose to define high earning (TRUE) as the school's median graduate earnings being greater than the top quartile of the median United States household income for that year. Any income below the top quartile of that year's median household income was defined as low earning (FALSE). I used https://fred.stlouisfed.org/series/MEHOINUSA672N for the median household incomes of each year.
+
+
+## EDA Visuals:
+### Histogram of Standardized Indexes \
+We can see that the Standardized Indexes are normally distributed. \
+```{r}
+ggplot(clean_data, mapping = aes(index)) + geom_histogram(bins = 100)
+```
+\
+### Index over Time \
+To get a general view of index over time, I grouped by monthorweek and income and summarized by the index mean, with a marker indicating when the scorecard was introduced. In the plot below we can see parallel trends. We can also see that it seems like interest changes seasonally, with some months seeing a peak while others see lows. Lastly, plotting a regression line we see that high income started out with higher indexes but was surpassed by low income school in late 2014. We also see that for both income levels index is decreasing. 
+
+```{r}
+index_time_graph <- clean_data %>% group_by(monthorweek, high_income) %>% summarize(mean(index))
+
+ggplot(index_time_graph, aes(x = monthorweek, y = `mean(index)`, color = high_income)) + geom_point() + geom_line() + geom_vline(xintercept = as.Date("2015-09-01")) + geom_smooth(method = 'lm')
+```
+\
+### Index per Month \
+As we saw in the graph above there are a lot of peaks and valleys of interest based on time. Below we plot index by month in a column chart (removing the year). We can see that indexes peak in September, followed by August and October and reach lows in June and December. This will be something to consider controlling for in our models.
+```{r}
+clean_data <- clean_data %>% mutate(month = month(monthorweek))
+ggplot(clean_data, aes(x = month, y = index)) + geom_col()
+```
+
+# Models \
+In all models we see index as the dependent variable. 
+
+## Model 1 \
+Running a basic regression to see the effects that scorecard existence and high income have on index. Controlling for month since we saw in the plot above that month has an impact on the index regardless of scorecard existence or income level.
+```{r}
+md1 <- feols(index ~ scorecard_exist + high_income + month, data = clean_data)
+resid_md1 <- resid(md1)
+plot(fitted(md1), resid_md1)
+wald(md1, c('high_income', 'scorecard_exist'))
+etable(md1)
+```
+\
+Based on the results from our wald test we can confidently say that both high income and scorecard existence do have an impact. The fitted vs. residuals also presents some concerns, we can conclude that there's hetersokedacity present. This could be from using two binary variables as our independents or maybe not enough variation was controlled for. This will be something I look to correct in future models.
+
+Holding everything else constant we can see that the average index decreased by 0.2148 once the scorecard was introduced. We also can see that holding everything else constant schools with high income have a slightly greater (0.0241) index than lower income schools. 
+
+This model does not answer our question since we are interested in determining how the scorecard release effected interest in high earning schools, and this does not show the interaction between the two.\
+
+## Model 2 \
+Adding in the interaction of scorecard existence and high income, while still controlling for month. 
+```{r}
+md2 <- feols(index ~ scorecard_exist + high_income + scorecard_exist*high_income + month, data = clean_data, vcov = 'hetero')
+resid_md2 <- resid(md2)
+plot(fitted(md2), resid_md2)
+wald(md2, c('high_income', 'scorecard_exist'))
+etable(md2)
+
+```
+\
+Once again based on the wald test we see that high income and scorecard existence both have an impact. The fitted vs.residuals is an improvement compared to the first model, but still showing heter0skedacity. I will add some controls in the next model to hopefully solve for this. 
+
+Here we see that there is a decrease of 0.2071 in the index between high income and low income schools with the existence of the scorecard. 
+
+This directly answers the question but I would like to add in some fixed effects to account for how different each school may be in population, racial demographics, etc.
+
+##  Model 3 \
+Adding in fixed effect for school name to control for variation within schools.
+```{r}
+md3 <- feols(index ~ scorecard_exist + high_income + scorecard_exist*high_income + month | schname, data = clean_data, vcov = 'hetero')
+resid_md3 <- resid(md3)
+plot(fitted(md3), resid_md3)
+wald(md3, c('high_income', 'scorecard_exist'))
+etable(md3)
+```
+\
+We see the same results as before from the wald test. We also see good variation in our fitted vs. residuals plot! 
+
+Here we added in a fixed effect for schname. This is to control for variations within schools. We do see a very similar result as seen in model 3, being that there is a difference of -0.2117 in indexes between high income and low income schools after the release of the scorecard. \
+
+# Conclusion\
+The final model (model 3) will be the model that we go with. We did see very similar results between model 2 and 3, both saw the average index of high income schools drop below low income schools with the introduction of scorecard, this also aligned closely with the graph that showed average indexes of high and low income schools over time. Model 3 adds in an additional control within schools so we don't have to account for all of those variables individually and the fitted vs. residuals plot showed good variation. It also includes the interaction between high income and scorecard existence along with a control for month since we saw earlier that month has an impact on index.
+
+The final model interpretation shows that when controlling for school characteristics and month, when the scorecard exists low income schools have an average index of 0.2117 higher than high income schools that is statistically significant. When originally tasked with this analysis I thought it would be a no brainer that the scorecard existence would shift interest to schools with higher median incomes. I saw this hypothesis debunked first in my plot of indexes of high and low income schools over time. It is also interesting to see in this plot how over time (even prior to the scorecard release) that interest in schools of either income levels was dropping. With the data we have there is only a few years of post scorecard data (based on the summary statistics it makes up for only about 20% of the data), it would be interesting to see how interest would possibly evolve after more years of the scorecard being available for prospective students to use. 
+
+For further research it would be interesting look at more characteristics than just median earnings of schools to see their effect on interest. Considering my personal experience of looking at colleges (both undergraduate and graduate) to attend I recall distance from home, tuition cost, accreditation, majors, and program ranking to have the most significant impact on my decision, not once do I recall looking at median earnings. I would also be interested in further looking into why interest in schools via Google trends overall is declining. Are prospective students getting this information from other places rather than Google? Therefore it could be worth investigating interest in schools through other avenues. 
