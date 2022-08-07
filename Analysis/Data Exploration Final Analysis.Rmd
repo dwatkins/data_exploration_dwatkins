@@ -2,7 +2,10 @@
 title: "Data Exploration Final Analysis"
 author: "Danielle Watkins"
 date: "8/6/2022"
-output: html_document
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -40,26 +43,28 @@ In order to categorize and define a "high earning" institution I created a dummy
 
 ## EDA Visuals:
 ### Histogram of Standardized Indexes \
-We can see that the Standardized Indexes are normally distributed. \
 ```{r}
 ggplot(clean_data, mapping = aes(index)) + geom_histogram(bins = 100)
 ```
 \
-### Index over Time \
-To get a general view of index over time, I grouped by monthorweek and income and summarized by the index mean, with a marker indicating when the scorecard was introduced. In the plot below we can see parallel trends. We can also see that it seems like interest changes seasonally, with some months seeing a peak while others see lows. Lastly, plotting a regression line we see that high income started out with higher indexes but was surpassed by low income school in late 2014. We also see that for both income levels index is decreasing. 
+We can see that the Standardized Indexes are normally distributed. \
 
+### Index over Time \
 ```{r}
 index_time_graph <- clean_data %>% group_by(monthorweek, high_income) %>% summarize(mean(index))
 
 ggplot(index_time_graph, aes(x = monthorweek, y = `mean(index)`, color = high_income)) + geom_point() + geom_line() + geom_vline(xintercept = as.Date("2015-09-01")) + geom_smooth(method = 'lm')
 ```
 \
-### Index per Month \
-As we saw in the graph above there are a lot of peaks and valleys of interest based on time. Below we plot index by month in a column chart (removing the year). We can see that indexes peak in September, followed by August and October and reach lows in June and December. This will be something to consider controlling for in our models.
+To get a general view of index over time, I grouped by monthorweek and income and summarized by the index mean, with a marker indicating when the scorecard was introduced. In the plot below we can see parallel trends. We can also see that it seems like interest changes seasonally, with some months seeing a peak while others see lows. Lastly, plotting a regression line we see that high income started out with higher indexes but was surpassed by low income school in late 2014. We also see that for both income levels index is decreasing.\
+
+### Index per Month
 ```{r}
 clean_data <- clean_data %>% mutate(month = month(monthorweek))
 ggplot(clean_data, aes(x = month, y = index)) + geom_col()
 ```
+\
+As we saw in the graph above there are a lot of peaks and valleys of interest based on time. Below we plot index by month in a column chart (removing the year). We can see that indexes peak in September, followed by August and October and reach lows in June and December. This will be something to consider controlling for in our models.\
 
 # Models \
 In all models we see index as the dependent variable. 
