@@ -96,7 +96,7 @@ etable(md2)
 
 ```
 \
-Once again based on the wald test we see that high income and scorecard existence both have an impact. The fitted vs.residuals is an improvement compared to the first model, but still showing heter0skedacity. I will add some controls in the next model to hopefully solve for this. 
+Once again based on the wald test we see that high income and scorecard existence both have an impact. The fitted vs. residuals is an improvement compared to the first model, but still showing heteroskedacity. I will add some controls in the next model to hopefully solve for this. 
 
 Here we see that there is a decrease of 0.2071 in the index between high income and low income schools with the existence of the scorecard. 
 
